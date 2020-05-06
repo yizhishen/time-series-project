@@ -1,38 +1,46 @@
-library("readxl")
 library(zoo)
 library(ggplot2)
 library(tseries)
-setwd("C:/Users/sky/downloads/") #ÉèÖÃ¹¤×÷Çø¼ä£¬Õâ¸ö¸Ä³ÉÄã×Ô¼ºµÄÎÄ¼şÂ·¾¶£¬×¢ÒâÊÇ¡°/¡±
+
+library(forecast)
+setwd("C:/Users/sky/downloads/") #è®¾ç½®å·¥ä½œåŒºé—´ï¼Œè¿™ä¸ªæ”¹æˆä½ è‡ªå·±çš„æ–‡ä»¶è·¯å¾„ï¼Œæ³¨æ„æ˜¯â€œ/â€
 avocado <- read.csv("avocado.csv")
-avocado$Date <- as.numeric(avocado$Date)
-is.na(avocado)  # ÅĞ¶ÏÊÇ·ñ´æÔÚÈ±Ê§
-n <- sum(is.na(avocado))  # Êä³öÈ±Ê§Öµ¸ö
-boxplot(avocado$AveragePrice)
-plot.ts(avocado$AveragePrice)
-Price <- ts(avocado$AveragePrice)
-ggplot(data = avocado, aes(x = avocado$Date, y = avocado$AveragePrice))+geom_line(color = "#00AFBB", size = 0.3) + labs(x="Date",y="Prices($)",title = "WTI Crude Oil Prices - Weekly Chart")        
-zz <-avocado[avocado$region=="Atlanta",]     
-plot(avocado$AveragePrice,type="l")
-acf(Price)
-pacf(Price)
-adf.test(Price)
-dd <- diff(log(Price))
-plot.ts(dd)
-acf(dd)
-adf.test(dd)
+avocado$Date <- as.Date(avocado$Date)
+is.na(avocado)  # åˆ¤æ–­æ˜¯å¦å­˜åœ¨ç¼ºå¤±
+n <- sum(is.na(avocado))  # è¾“å‡ºç¼ºå¤±å€¼ä¸ª
+Chicago <-avocado[avocado$region=="Chicago"&avocado$type=="organic" ,]
+Chicago <- Chicago[order(Chicago$Date),]
+Price <- Chicago$AveragePrice
+boxplot(Price)
+plot.ts(train_prices)
+price_ts <-ts(as.vector(Price),start=c(2015,1,5), frequency=52)
+train_prices <-ts(as.vector(price_ts[1:158]),start=c(2015,1,5), frequency=52)
+tsdisplay(train_prices)
+acf(train_prices)
+pacf(train_prices)
+adf.test(train_prices)
 
-pacf(dd)
-resm <- ar(dd, method="mle"); resm
-plot(as.numeric(names(resm$aic)), resm$aic, type="h",
-     xlab="k", ylab="AIC")
-resm2 <- arima(dd, order=c(12,0,0))
-Box.test(resm2$residuals, lag=12, type="Ljung", fitdf=3)
 
-resm4 <- arima(dd[1:18000], order=c(12,0,0))
-resm4
-pred4 <- predict(resm4, n.ahead=12, se.fit=TRUE)
-cbind(Observed=round(c(dd[18001:18012]), 4), 
-      Predict=round(c(pred4$pred), 4), 
-      SE=round(c(pred4$se), 3))
+d1_train_prices <- diff(train_prices,1)
+tsdisplay(d1_train_prices)
+adf.test(d1_train_prices)
+
+model1 <- auto.arima(train_prices, ic=c( "aic"), trace = T)
+
+model1
+summary(model1)
+#model1 <- arima(train_prices, order=c(0,1,0))
+model1
+
+tsdiag(model1)
+
+
+f.p1<-forecast(model1,h=11,level=c(99.5))
+
+#
+plot(f.p1)
+lines(f.p1$fitted,col="green")
+lines(price_ts,col="red")
+
 
 
